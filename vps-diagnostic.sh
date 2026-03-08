@@ -1,0 +1,23 @@
+#!/bin/bash
+echo "=== DISK SPACE ==="
+df -h /
+echo ""
+echo "=== RUNNING SERVICES ==="
+systemctl list-units --type=service --state=running | grep -E "nginx|apache|node|postgres|mysql|docker" || echo "No matching services"
+echo ""
+echo "=== LISTENING PORTS ==="
+ss -tlnp | grep LISTEN | head -20
+echo ""
+echo "=== DOCKER STATUS ==="
+docker --version 2>&1 || echo "Docker not installed"
+echo ""
+echo "=== NODE/NPM STATUS ==="
+node --version 2>&1 || echo "Node not installed"
+npm --version 2>&1 || echo "NPM not installed"
+echo ""
+echo "=== NGINX/APACHE CONFIG ==="
+ls -la /etc/nginx 2>&1 || echo "Nginx not found"
+ls -la /etc/apache2 2>&1 || echo "Apache not found"
+echo ""
+echo "=== POSTGRES STATUS ==="
+psql --version 2>&1 || echo "PostgreSQL client not installed"

@@ -1,0 +1,1 @@
+import{j as e}from"./motion-BAKLQNgm.js";import"./react-BGL3gLFi.js";function s(){return e.jsxs("div",{className:"p-8",children:[e.jsx("h1",{className:"text-2xl font-bold mb-4",children:"Garantias"}),e.jsx("p",{children:"Prazos de garantia e alertas de vencimento."})]})}export{s as CustomerWarranties};

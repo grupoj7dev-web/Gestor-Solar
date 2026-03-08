@@ -1,0 +1,46 @@
+{
+  "name": "apisolarman",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node api/src/index.js",
+    "dev": "nodemon --delay 180000ms api/src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^6.16.0",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "elevenlabs": "^1.59.0",
+    "express": "^5.1.0",
+    "framer-motion": "^12.23.24",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.555.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
+    "openai": "^6.10.0",
+    "pdfkit": "^0.15.0",
+    "pg": "^8.16.3",
+    "prisma": "^6.16.0",
+    "recharts": "^3.5.0",
+    "ssh2": "^1.17.0",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.22",
+    "nodemon": "^3.1.11",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17"
+  }
+}

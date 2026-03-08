@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "minSeverity": "high",
+  "excludeWithOpenTickets": true,
+  "autoRefreshInterval": 30000,
+  "lastUpdate": "2026-03-06T10:53:52.122Z"
+}

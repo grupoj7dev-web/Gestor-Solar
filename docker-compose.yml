@@ -1,0 +1,47 @@
+services:
+  backend:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: bash -c "npm install && npm start"
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    networks:
+      - Admin
+    deploy:
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=Admin"
+        - "traefik.http.routers.gestorsolar-api.rule=Host(`app.gestorsolar.com.br`) && PathPrefix(`/api`)"
+        - "traefik.http.routers.gestorsolar-api.entrypoints=websecure"
+        - "traefik.http.routers.gestorsolar-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.gestorsolar-api.loadbalancer.server.port=4001"
+
+  frontend:
+    image: nginx:alpine
+    volumes:
+      - ./web/dist:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - Admin
+    deploy:
+      restart_policy:
+        condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=Admin"
+        - "traefik.http.routers.gestorsolar.rule=Host(`app.gestorsolar.com.br`)"
+        - "traefik.http.routers.gestorsolar.entrypoints=websecure"
+        - "traefik.http.routers.gestorsolar.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.gestorsolar.loadbalancer.server.port=80"
+
+networks:
+  Admin:
+    external: true

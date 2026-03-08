@@ -1,0 +1,101 @@
+name: Deploy Gestor Solar
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-dev:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build web app
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Upload files (development)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "./api,./web,./prisma,./migrations,./package.json,./package-lock.json,./docker-compose.yml,./nginx.conf"
+          target: ${{ secrets.APP_PATH }}
+          overwrite: true
+          timeout: 2m
+
+      - name: Deploy via SSH (development)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          timeout: 2m
+          command_timeout: 15m
+          script: |
+            set -e
+            cd "${{ secrets.APP_PATH }}"
+            echo "${{ secrets.ENV_FILE_CONTENT_B64 }}" | base64 -d > .env
+            DRIVER="$(docker network inspect Admin -f '{{.Driver}}' 2>/dev/null || true)"
+            if [ "$DRIVER" != "overlay" ]; then
+              docker network rm Admin >/dev/null 2>&1 || true
+              docker network create --driver overlay --attachable Admin >/dev/null 2>&1 || true
+            fi
+            docker stack deploy -c docker-compose.yml gestor-solar
+
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build web app
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Upload files (production)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "./api,./web,./prisma,./migrations,./package.json,./package-lock.json,./docker-compose.yml,./nginx.conf"
+          target: ${{ secrets.APP_PATH }}
+          overwrite: true
+          timeout: 2m
+
+      - name: Deploy via SSH (production)
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          timeout: 2m
+          command_timeout: 15m
+          script: |
+            set -e
+            cd "${{ secrets.APP_PATH }}"
+            echo "${{ secrets.ENV_FILE_CONTENT_B64 }}" | base64 -d > .env
+            DRIVER="$(docker network inspect Admin -f '{{.Driver}}' 2>/dev/null || true)"
+            if [ "$DRIVER" != "overlay" ]; then
+              docker network rm Admin >/dev/null 2>&1 || true
+              docker network create --driver overlay --attachable Admin >/dev/null 2>&1 || true
+            fi
+            docker stack deploy -c docker-compose.yml gestor-solar

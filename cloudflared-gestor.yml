@@ -1,0 +1,6 @@
+tunnel: d77cbd21-9d4b-4e7d-a7b0-bc7468b65e60
+credentials-file: C:\Users\danil\.cloudflared\d77cbd21-9d4b-4e7d-a7b0-bc7468b65e60.json
+ingress:
+  - hostname: app.gestorsolar.com.br
+    service: http://localhost:4000
+  - service: http_status:404

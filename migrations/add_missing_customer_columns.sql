@@ -1,0 +1,15 @@
+ALTER TABLE customers 
+ADD COLUMN IF NOT EXISTS kit_details JSONB DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS sale_total_value NUMERIC(10,2),
+ADD COLUMN IF NOT EXISTS financial_conditions JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS proxy_file_url TEXT,
+ADD COLUMN IF NOT EXISTS art_file_url TEXT,
+ADD COLUMN IF NOT EXISTS module_inmetro_file_url TEXT,
+ADD COLUMN IF NOT EXISTS inverter_datasheet_file_url TEXT,
+ADD COLUMN IF NOT EXISTS module_datasheet_file_url TEXT,
+ADD COLUMN IF NOT EXISTS generator_registration_file_url TEXT,
+ADD COLUMN IF NOT EXISTS diagram_file_url TEXT,
+ADD COLUMN IF NOT EXISTS memorial_file_url TEXT,
+ADD COLUMN IF NOT EXISTS access_request_file_url TEXT,
+ADD COLUMN IF NOT EXISTS other_project_documents JSONB DEFAULT '[]'::jsonb,
+ADD COLUMN IF NOT EXISTS contacts JSONB DEFAULT '[]'::jsonb;

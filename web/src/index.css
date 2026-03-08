@@ -1,0 +1,299 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 220 26% 97%;
+        --foreground: 222 47% 11%;
+
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+
+        --primary: 217 91% 60%;
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 220 15% 95%;
+        --secondary-foreground: 222 47% 11%;
+
+        --muted: 220 18% 96%;
+        --muted-foreground: 215 16% 40%;
+
+        --accent: 220 18% 96%;
+        --accent-foreground: 222 47% 11%;
+
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 220 16% 89%;
+        --input: 220 16% 89%;
+        --ring: 217 91% 60%;
+        --surface-1: 0 0% 100%;
+        --surface-2: 220 20% 98%;
+        --surface-3: 220 16% 95%;
+        --text-strong: 222 47% 11%;
+        --text-soft: 215 16% 40%;
+
+        --radius: 0.5rem;
+    }
+
+    .dark {
+        --background: 222 47% 11%;
+        --foreground: 210 20% 98%;
+
+        --card: 223 47% 14%;
+        --card-foreground: 210 20% 98%;
+
+        --popover: 223 47% 14%;
+        --popover-foreground: 210 20% 98%;
+
+        --primary: 217 91% 60%;
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 222 31% 20%;
+        --secondary-foreground: 210 20% 98%;
+
+        --muted: 223 27% 18%;
+        --muted-foreground: 215 20% 75%;
+
+        --accent: 223 27% 18%;
+        --accent-foreground: 210 20% 98%;
+
+        --destructive: 0 72% 55%;
+        --destructive-foreground: 0 0% 100%;
+
+        --border: 222 27% 22%;
+        --input: 222 27% 22%;
+        --ring: 217 91% 60%;
+    }
+}
+
+@layer components {
+    .ds-surface-1 {
+        background-color: hsl(var(--surface-1));
+    }
+
+    .ds-surface-2 {
+        background-color: hsl(var(--surface-2));
+    }
+
+    .ds-card {
+        @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+    }
+
+    .ds-title {
+        color: hsl(var(--text-strong));
+        @apply font-semibold;
+    }
+
+    .ds-subtitle {
+        color: hsl(var(--text-soft));
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        transition: background-color 200ms ease, color 200ms ease;
+    }
+
+    img {
+        image-rendering: auto;
+    }
+
+    /* Reduce heavy visual noise globally */
+    .shadow,
+    .shadow-sm,
+    .shadow-md,
+    .shadow-lg,
+    .shadow-xl,
+    .shadow-2xl {
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    .backdrop-blur-sm,
+    .backdrop-blur,
+    .backdrop-blur-md {
+        backdrop-filter: blur(2px) !important;
+    }
+
+    /* Keep gradients but make them less saturated/strong */
+    [class*="bg-gradient-to-"] {
+        filter: saturate(0.82) contrast(0.96) brightness(1.03);
+    }
+
+    /* Soften very bright panels and reduce visual clutter */
+    html:not(.dark) .bg-white {
+        background-color: #ffffff;
+    }
+
+    .dark .bg-white {
+        background-color: #111827;
+    }
+
+    /* Legacy palette harmonization for screens that still rely on light-only utilities */
+    .dark .bg-gray-50 {
+        background-color: #0f172a;
+    }
+
+    .dark .bg-gray-100 {
+        background-color: #1e293b;
+    }
+
+    .dark .bg-gray-200 {
+        background-color: #334155;
+    }
+
+    .dark .bg-blue-50 {
+        background-color: rgba(30, 58, 138, 0.28);
+    }
+
+    .dark .bg-green-50 {
+        background-color: rgba(20, 83, 45, 0.3);
+    }
+
+    .dark .bg-yellow-50 {
+        background-color: rgba(113, 63, 18, 0.3);
+    }
+
+    .dark .bg-orange-50 {
+        background-color: rgba(124, 45, 18, 0.3);
+    }
+
+    .dark .bg-red-50 {
+        background-color: rgba(127, 29, 29, 0.3);
+    }
+
+    .dark .text-gray-900 {
+        color: #f8fafc;
+    }
+
+    .dark .text-gray-800 {
+        color: #e2e8f0;
+    }
+
+    .dark .text-gray-700 {
+        color: #cbd5e1;
+    }
+
+    .dark .text-gray-600 {
+        color: #94a3b8;
+    }
+
+    .dark .text-gray-500 {
+        color: #94a3b8;
+    }
+
+    .dark .text-gray-400 {
+        color: #64748b;
+    }
+
+    .dark .border-gray-300 {
+        border-color: #475569 !important;
+    }
+
+    .dark .border-blue-200,
+    .dark .border-blue-300 {
+        border-color: rgba(59, 130, 246, 0.5) !important;
+    }
+
+    .dark .border-green-200,
+    .dark .border-green-300 {
+        border-color: rgba(34, 197, 94, 0.5) !important;
+    }
+
+    .dark .border-yellow-200,
+    .dark .border-yellow-300 {
+        border-color: rgba(250, 204, 21, 0.45) !important;
+    }
+
+    .dark .border-orange-200,
+    .dark .border-orange-300 {
+        border-color: rgba(249, 115, 22, 0.45) !important;
+    }
+
+    .dark .border-red-200,
+    .dark .border-red-300 {
+        border-color: rgba(248, 113, 113, 0.45) !important;
+    }
+
+    .dark .shadow-lg,
+    .dark .shadow-xl,
+    .dark .shadow-2xl {
+        box-shadow: 0 10px 28px rgba(2, 6, 23, 0.5) !important;
+    }
+
+    .dark .hover\:bg-gray-50:hover {
+        background-color: #1e293b;
+    }
+
+    .dark .hover\:bg-gray-100:hover {
+        background-color: #334155;
+    }
+
+    .dark .hover\:text-gray-900:hover {
+        color: #f8fafc;
+    }
+
+    html:not(.dark) .border-gray-100,
+    html:not(.dark) .border-gray-200 {
+        border-color: #e5e7eb !important;
+    }
+
+    .dark .border-gray-100,
+    .dark .border-gray-200 {
+        border-color: #374151 !important;
+    }
+
+    /* Make scroll areas lighter and cleaner */
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .dark * {
+        scrollbar-color: #4b5563 transparent;
+    }
+
+    *::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+
+    .dark *::-webkit-scrollbar-thumb {
+        background: #4b5563;
+    }
+
+    *::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
