@@ -18,3 +18,5 @@ api/var/rules.json
 deploy_package.zip
 dist_deploy/
 prisma/dev.db
+.ssh_keys/
+var/storage/
