@@ -208,17 +208,7 @@ export function CustomerFormWizard() {
         }
     };
 
-    const canProceed = () => {
-        if (currentStep === 1) return customerType !== '';
-        if (currentStep === 2) {
-            if (customerType === 'pf') {
-                return formData.full_name && formData.cpf && formData.email && formData.phone;
-            } else {
-                return formData.company_name && formData.cnpj && formData.email && formData.phone;
-            }
-        }
-        return true;
-    };
+    const canProceed = () => (currentStep === 1 ? customerType !== '' : true);
 
     // Formatting helpers
     const formatCPFDisplay = (cpf) => {
@@ -600,7 +590,7 @@ export function CustomerFormWizard() {
                                 {customerType === 'pf' ? (
                                     <>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Nome Completo *</label>
+                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Nome Completo</label>
                                             <input
                                                 type="text"
                                                 value={formData.full_name}
@@ -610,7 +600,7 @@ export function CustomerFormWizard() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">CPF *</label>
+                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">CPF</label>
                                             <input
                                                 type="text"
                                                 value={formatCPFDisplay(formData.cpf)}
@@ -643,7 +633,7 @@ export function CustomerFormWizard() {
                                 ) : (
                                     <>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Razão Social *</label>
+                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Razão Social</label>
                                             <input
                                                 type="text"
                                                 value={formData.company_name}
@@ -663,7 +653,7 @@ export function CustomerFormWizard() {
                                             />
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">CNPJ *</label>
+                                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">CNPJ</label>
                                             <input
                                                 type="text"
                                                 value={formatCNPJDisplay(formData.cnpj)}
@@ -694,7 +684,7 @@ export function CustomerFormWizard() {
                                     </>
                                 )}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Email *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Email</label>
                                     <input
                                         type="email"
                                         value={formData.email}
@@ -704,7 +694,7 @@ export function CustomerFormWizard() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Telefone *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Telefone</label>
                                     <input
                                         type="text"
                                         value={formatPhoneDisplay(formData.phone)}
@@ -715,7 +705,7 @@ export function CustomerFormWizard() {
                                     />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">CEP *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">CEP</label>
                                     <input
                                         type="text"
                                         value={formatCEPDisplay(formData.cep)}
@@ -727,7 +717,7 @@ export function CustomerFormWizard() {
                                     {loadingCEP && <p className="text-sm text-blue-600 mt-1">Buscando endereço...</p>}
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Rua *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Rua</label>
                                     <input
                                         type="text"
                                         value={formData.street}
@@ -736,7 +726,7 @@ export function CustomerFormWizard() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Número *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Número</label>
                                     <input
                                         type="text"
                                         value={formData.number}
@@ -754,7 +744,7 @@ export function CustomerFormWizard() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Bairro *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Bairro</label>
                                     <input
                                         type="text"
                                         value={formData.neighborhood}
@@ -763,7 +753,7 @@ export function CustomerFormWizard() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Cidade *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Cidade</label>
                                     <input
                                         type="text"
                                         value={formData.city}
@@ -772,7 +762,7 @@ export function CustomerFormWizard() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Estado *</label>
+                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Estado</label>
                                     <input
                                         type="text"
                                         value={formData.state}
@@ -803,7 +793,7 @@ export function CustomerFormWizard() {
                             {formData.has_different_holder && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Nome do Titular *</label>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Nome do Titular</label>
                                         <input
                                             type="text"
                                             value={formData.holder_name}
@@ -812,7 +802,7 @@ export function CustomerFormWizard() {
                                         />
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Grau de Vínculo *</label>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Grau de Vínculo</label>
                                         <select
                                             value={formData.holder_relationship}
                                             onChange={(e) => setFormData({ ...formData, holder_relationship: e.target.value })}

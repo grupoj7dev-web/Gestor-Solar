@@ -3,6 +3,7 @@ const router = express.Router();
 const supabase = require('../config/supabase');
 const { validateCPF, validateCNPJ, validateEmail, validatePhone } = require('../utils/validators');
 const authMiddleware = require('../middleware/auth');
+const { randomUUID } = require('crypto');
 
 function normalizeProvider(provider) {
     const value = String(provider || 'solarman').trim().toLowerCase();
@@ -307,46 +308,30 @@ router.post('/', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Invalid customer type. Must be "pf" or "pj"' });
         }
 
-        // Validate common required fields
-        if (!email || !phone || !cep || !street || !neighborhood || !city || !state) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-
-        // Validate email
-        if (!validateEmail(email)) {
+        // Optional validations (only when fields are provided)
+        if (email && !validateEmail(email)) {
             return res.status(400).json({ error: 'Invalid email format' });
         }
 
-        // Validate phone
-        if (!validatePhone(phone)) {
+        if (phone && !validatePhone(phone)) {
             return res.status(400).json({ error: 'Invalid phone format' });
         }
 
-        // Validate additional contact email if provided
         if (additional_contact_email && !validateEmail(additional_contact_email)) {
             return res.status(400).json({ error: 'Invalid additional contact email format' });
         }
 
-        // Validate additional contact phone if provided
         if (additional_contact_phone && !validatePhone(additional_contact_phone)) {
             return res.status(400).json({ error: 'Invalid additional contact phone format' });
         }
 
-        // Type-specific validations
+        // Type-specific validations (only when provided)
         if (customer_type === 'pf') {
-            if (!cpf || !full_name) {
-                return res.status(400).json({ error: 'CPF and full name are required for PF' });
-            }
-
-            if (!validateCPF(cpf)) {
+            if (cpf && !validateCPF(cpf)) {
                 return res.status(400).json({ error: 'Invalid CPF' });
             }
         } else if (customer_type === 'pj') {
-            if (!cnpj || !company_name) {
-                return res.status(400).json({ error: 'CNPJ and company name are required for PJ' });
-            }
-
-            if (!validateCNPJ(cnpj)) {
+            if (cnpj && !validateCNPJ(cnpj)) {
                 return res.status(400).json({ error: 'Invalid CNPJ' });
             }
         }
@@ -354,29 +339,29 @@ router.post('/', authMiddleware, async (req, res) => {
         // Prepare data object
         const customerData = {
             customer_type,
-            email,
-            phone: phone.replace(/\D/g, ''),
-            cep: cep.replace(/\D/g, ''),
-            street,
-            number,
-            complement,
-            neighborhood,
-            city,
-            state,
+            email: email || null,
+            phone: phone ? phone.replace(/\D/g, '') : null,
+            cep: cep ? cep.replace(/\D/g, '') : null,
+            street: street || null,
+            number: number || null,
+            complement: complement || null,
+            neighborhood: neighborhood || null,
+            city: city || null,
+            state: state || null,
             additional_contact_name,
             additional_contact_phone: additional_contact_phone ? additional_contact_phone.replace(/\D/g, '') : null,
-            additional_contact_email,
+            additional_contact_email: additional_contact_email || null,
             contract_file_url,
             document_type,
             document_file_url,
             observations,
             has_different_holder,
             holder_type,
-            holder_name,
+            holder_name: holder_name || null,
             holder_document: holder_document ? holder_document.replace(/\D/g, '') : null,
             holder_rg,
             holder_state_registration,
-            holder_email,
+            holder_email: holder_email || null,
             holder_phone: holder_phone ? holder_phone.replace(/\D/g, '') : null,
             holder_zip: holder_zip ? holder_zip.replace(/\D/g, '') : null,
             holder_address,
@@ -415,16 +400,16 @@ router.post('/', authMiddleware, async (req, res) => {
 
         // Add type-specific fields
         if (customer_type === 'pf') {
-            customerData.cpf = cpf.replace(/\D/g, '');
-            customerData.rg = rg;
-            customerData.full_name = full_name;
-            customerData.birth_date = birth_date;
+            customerData.cpf = cpf ? cpf.replace(/\D/g, '') : null;
+            customerData.rg = rg || null;
+            customerData.full_name = full_name || null;
+            customerData.birth_date = birth_date || null;
         } else {
-            customerData.cnpj = cnpj.replace(/\D/g, '');
-            customerData.company_name = company_name;
-            customerData.trade_name = trade_name;
-            customerData.state_registration = state_registration;
-            customerData.municipal_registration = municipal_registration;
+            customerData.cnpj = cnpj ? cnpj.replace(/\D/g, '') : null;
+            customerData.company_name = company_name || null;
+            customerData.trade_name = trade_name || null;
+            customerData.state_registration = state_registration || null;
+            customerData.municipal_registration = municipal_registration || null;
         }
 
         const { data: customer, error } = await supabase
