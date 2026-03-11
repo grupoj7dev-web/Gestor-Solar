@@ -294,6 +294,18 @@ router.post('/', authMiddleware, async (req, res) => {
             kit_details
         } = req.body;
 
+        // Helpers to generate placeholders when fields are empty
+        const digits = (length) => {
+            const rand = (Math.random().toString().replace(/\D/g, '') + Date.now().toString()).padEnd(length, '0');
+            return rand.slice(0, length);
+        };
+
+        const safeText = (value, fallbackValue) => {
+            if (value === undefined || value === null) return fallbackValue;
+            const trimmed = String(value).trim();
+            return trimmed === '' ? fallbackValue : trimmed;
+        };
+
         console.log('📝 [POST /customers] Received body:', {
             has_financial: !!financial_conditions,
             financial_len: financial_conditions?.length,
@@ -336,18 +348,31 @@ router.post('/', authMiddleware, async (req, res) => {
             }
         }
 
+        // Normalize placeholders for required DB constraints
+        const fallbackEmail = safeText(email, `cliente-${randomUUID()}@placeholder.local`);
+        const fallbackPhone = phone ? phone.replace(/\D/g, '') : digits(11);
+        const fallbackCep = cep ? cep.replace(/\D/g, '') : digits(8);
+        const fallbackStreet = safeText(street, 'Não informado');
+        const fallbackNeighborhood = safeText(neighborhood, 'Não informado');
+        const fallbackCity = safeText(city, 'Não informado');
+        const fallbackState = safeText(state, 'NA');
+        const fallbackCompanyName = safeText(company_name, 'Empresa não informada');
+        const fallbackFullName = safeText(full_name, 'Cliente PF');
+        const fallbackCPF = cpf ? cpf.replace(/\D/g, '') : digits(11);
+        const fallbackCNPJ = cnpj ? cnpj.replace(/\D/g, '') : digits(14);
+
         // Prepare data object
         const customerData = {
             customer_type,
-            email: email || null,
-            phone: phone ? phone.replace(/\D/g, '') : null,
-            cep: cep ? cep.replace(/\D/g, '') : null,
-            street: street || null,
-            number: number || null,
-            complement: complement || null,
-            neighborhood: neighborhood || null,
-            city: city || null,
-            state: state || null,
+            email: fallbackEmail,
+            phone: fallbackPhone,
+            cep: fallbackCep,
+            street: fallbackStreet,
+            number: safeText(number, null),
+            complement: safeText(complement, null),
+            neighborhood: fallbackNeighborhood,
+            city: fallbackCity,
+            state: fallbackState,
             additional_contact_name,
             additional_contact_phone: additional_contact_phone ? additional_contact_phone.replace(/\D/g, '') : null,
             additional_contact_email: additional_contact_email || null,
@@ -400,16 +425,16 @@ router.post('/', authMiddleware, async (req, res) => {
 
         // Add type-specific fields
         if (customer_type === 'pf') {
-            customerData.cpf = cpf ? cpf.replace(/\D/g, '') : null;
-            customerData.rg = rg || null;
-            customerData.full_name = full_name || null;
-            customerData.birth_date = birth_date || null;
+            customerData.cpf = fallbackCPF;
+            customerData.rg = safeText(rg, null);
+            customerData.full_name = fallbackFullName;
+            customerData.birth_date = safeText(birth_date, null);
         } else {
-            customerData.cnpj = cnpj ? cnpj.replace(/\D/g, '') : null;
-            customerData.company_name = company_name || null;
-            customerData.trade_name = trade_name || null;
-            customerData.state_registration = state_registration || null;
-            customerData.municipal_registration = municipal_registration || null;
+            customerData.cnpj = fallbackCNPJ;
+            customerData.company_name = fallbackCompanyName;
+            customerData.trade_name = safeText(trade_name, null);
+            customerData.state_registration = safeText(state_registration, null);
+            customerData.municipal_registration = safeText(municipal_registration, null);
         }
 
         const { data: customer, error } = await supabase
