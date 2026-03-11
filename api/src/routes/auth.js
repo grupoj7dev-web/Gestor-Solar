@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
+const prisma = require('../config/prisma');
 
 /**
  * Auth Routes
@@ -28,6 +29,12 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is required');
 }
 
+async function tryRecoverCorruptedDb(error, context) {
+    if (!prisma.isSqliteCorruptionError(error)) return false;
+    await prisma.resetSqliteDatabaseOnCorruption(context);
+    return true;
+}
+
 // Check if any user exists (for first-time setup)
 router.get('/check-first-user', async (req, res) => {
     try {
@@ -40,6 +47,9 @@ router.get('/check-first-user', async (req, res) => {
 
         res.json({ hasUsers: data && data.length > 0 });
     } catch (error) {
+        if (await tryRecoverCorruptedDb(error, 'auth.check-first-user')) {
+            return res.json({ hasUsers: false, recovered: true });
+        }
         console.error('CRITICAL ERROR in /check-first-user:', error);
         res.status(500).json({ error: 'Server error', details: error.message });
     }
@@ -110,6 +120,9 @@ router.post('/register-first', async (req, res) => {
             }
         });
     } catch (error) {
+        if (await tryRecoverCorruptedDb(error, 'auth.register-first')) {
+            return res.status(503).json({ error: 'Banco reiniciado. Tente cadastrar o primeiro usuario novamente.' });
+        }
         if (error && (error.code === 'P2002' || error.code === '23505')) {
             return res.status(400).json({ error: 'Email already exists' });
         }
@@ -162,6 +175,9 @@ router.post('/register', async (req, res) => {
             }
         });
     } catch (error) {
+        if (await tryRecoverCorruptedDb(error, 'auth.register')) {
+            return res.status(503).json({ error: 'Banco reiniciado. Tente criar a conta novamente.' });
+        }
         if (error && (error.code === 'P2002' || error.code === '23505')) {
             return res.status(400).json({ error: 'Email already exists' });
         }
@@ -255,6 +271,9 @@ router.post('/login', async (req, res) => {
             }
         });
     } catch (error) {
+        if (await tryRecoverCorruptedDb(error, 'auth.login')) {
+            return res.status(503).json({ error: 'Banco reiniciado. Cadastre o primeiro usuario novamente.' });
+        }
         console.error('Error logging in:', error);
         res.status(500).json({ error: 'Server error' });
     }
@@ -288,6 +307,9 @@ router.get('/verify', async (req, res) => {
 
         res.json({ user });
     } catch (error) {
+        if (await tryRecoverCorruptedDb(error, 'auth.verify')) {
+            return res.status(401).json({ error: 'Sessao reiniciada. Faca login novamente.' });
+        }
         console.error('Error verifying token:', error);
         res.status(401).json({ error: 'Invalid token' });
     }
