@@ -23,19 +23,84 @@ import {
 import { useNotification } from '../contexts/NotificationContext';
 import { EmptyState, ErrorState, LoadingState } from '../components/feedback';
 
+const PROVIDER_META = {
+    solarman: {
+        label: 'Solarman',
+        badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    },
+    solis: {
+        label: 'Solis',
+        badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
+    },
+    deye: {
+        label: 'Deye',
+        badgeClass: 'bg-amber-50 text-amber-700 border-amber-200',
+    },
+    'aurora-vision': {
+        label: 'Aurora Vision',
+        badgeClass: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+    },
+    'solplanet-monitoramento': {
+        label: 'SOLPLANET',
+        badgeClass: 'bg-lime-50 text-lime-700 border-lime-200',
+    },
+    tsuness: {
+        label: 'TSUNESS',
+        badgeClass: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+    },
+    'isolarcloud-sungrow': {
+        label: 'ISOLAR CLOUD (SUNGROW)',
+        badgeClass: 'bg-rose-50 text-rose-700 border-rose-200',
+    },
+    'elekeeper-saj': {
+        label: 'ELEKEEPER (SAJ)',
+        badgeClass: 'bg-orange-50 text-orange-700 border-orange-200',
+    },
+};
+
+const DEFAULT_PROVIDER_CATALOG = [
+    { id: 'solarman', name: 'Solarman', configured: true },
+    { id: 'solis', name: 'Solis', configured: true },
+    { id: 'deye', name: 'Deye', configured: true },
+    { id: 'aurora-vision', name: 'Aurora Vision', configured: true },
+    { id: 'solplanet-monitoramento', name: 'SOLPLANET', configured: true },
+    { id: 'tsuness', name: 'TSUNESS', configured: true },
+    { id: 'isolarcloud-sungrow', name: 'ISOLAR CLOUD (SUNGROW)', configured: true },
+    { id: 'elekeeper-saj', name: 'ELEKEEPER (SAJ)', configured: true },
+];
+
+function normalizeProvider(provider) {
+    return String(provider || 'solarman').trim().toLowerCase() || 'solarman';
+}
+
+function providerLabel(provider) {
+    const normalized = normalizeProvider(provider);
+    return PROVIDER_META[normalized]?.label || normalized.toUpperCase();
+}
+
+function providerBadgeClass(provider) {
+    const normalized = normalizeProvider(provider);
+    return PROVIDER_META[normalized]?.badgeClass || 'bg-slate-50 text-slate-700 border-slate-200';
+}
+
+function stationMapKey(stationId, provider) {
+    return `${normalizeProvider(provider)}:${String(stationId || '')}`;
+}
+
 export function IntegratedPlants() {
     const navigate = useNavigate();
     const { success, error: notifyError, confirm } = useNotification();
     const [stations, setStations] = useState([]);
     const [linkedStations, setLinkedStations] = useState([]);
     const [customers, setCustomers] = useState([]);
+    const [providerCatalog, setProviderCatalog] = useState(DEFAULT_PROVIDER_CATALOG);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all'); // all, linked, unlinked
     const [filterOnline, setFilterOnline] = useState('all'); // all, online, offline
-    const [filterProvider, setFilterProvider] = useState('all'); // all, solarman, solis, deye
+    const [filterProvider, setFilterProvider] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(12);
     const [pageInput, setPageInput] = useState('1');
@@ -54,55 +119,86 @@ export function IntegratedPlants() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [solarmanStationsData, linkedData, customersData, solisStationsData, deyeStationsData] = await Promise.all([
-                solarman.getStations(),
+            const [providersResponse, linkedData, customersData] = await Promise.all([
+                integrationApi.getProviders().catch(() => ({ providers: DEFAULT_PROVIDER_CATALOG })),
                 solarman.getLinkedStations(),
                 api.get('/customers').then(res => res.data),
-                integrationApi.getSolisStations({ pageNo: 1, pageSize: 200 }).catch(() => null),
-                integrationApi.getDeyeStations({ all: true, size: 200 }).catch(() => null),
             ]);
 
-            const normalizedSolarman = (solarmanStationsData || []).map((item) => ({
+            const providers = Array.isArray(providersResponse?.providers)
+                ? providersResponse.providers
+                : DEFAULT_PROVIDER_CATALOG;
+            setProviderCatalog(providers);
+
+            const providerResults = await Promise.all(
+                providers
+                    .map(async (provider) => {
+                        const id = normalizeProvider(provider.id);
+                        if (!id) return [];
+                        try {
+                            const params = id === 'deye'
+                                ? { all: true, size: 200 }
+                                : { size: 200, pageSize: 200, pageNo: 1 };
+                            let stations = [];
+                            try {
+                                const response = await integrationApi.getStationsByProvider(id, params);
+                                stations = response?.stations || [];
+                            } catch (genericRouteError) {
+                                // Backward-compatible fallback when backend is running old routes only.
+                                const legacy = await integrationApi.getProviderStations(id, params);
+                                if (id === 'solis') {
+                                    const records = legacy?.data?.page?.records
+                                        || legacy?.data?.page?.record
+                                        || legacy?.data?.records
+                                        || [];
+                                    stations = Array.isArray(records) ? records.map((item) => {
+                                        const rawStatus = item.stationStatus ?? item.status ?? item.onlineStatus ?? item.connectStatus;
+                                        const statusText = String(rawStatus ?? '').toLowerCase();
+                                        const isOnline = rawStatus === 1
+                                            || rawStatus === '1'
+                                            || statusText.includes('online')
+                                            || statusText.includes('normal');
+                                        return {
+                                            id: String(item.id || item.stationId || item.plantId || ''),
+                                            name: item.stationName || item.name || item.plantName || 'Usina Solis',
+                                            location: item.stationAddr || item.address || item.location || '',
+                                            capacity: item.capacity || item.stationCapacity || item.capacityStr || null,
+                                            status: isOnline ? 'online' : 'offline',
+                                            provider: 'solis',
+                                        };
+                                    }) : [];
+                                } else if (id === 'deye') {
+                                    const records = Array.isArray(legacy?.stations) ? legacy.stations : [];
+                                    stations = records.map((item) => ({
+                                        id: String(item.id || ''),
+                                        name: item.name || 'Usina Deye',
+                                        location: item.location || '',
+                                        capacity: item.capacity || null,
+                                        status: item.status === 'online' ? 'online' : 'offline',
+                                        provider: 'deye',
+                                    }));
+                                } else {
+                                    stations = Array.isArray(legacy) ? legacy : [];
+                                }
+                                console.warn(`Fallback legacy route em uso para ${id}:`, genericRouteError);
+                            }
+                            return (stations || []).map((station) => ({
+                                ...station,
+                                id: String(station.id || station.stationId || ''),
+                                provider: normalizeProvider(station.provider || id),
+                            }));
+                        } catch (providerError) {
+                            console.warn(`Provider ${id} indisponivel:`, providerError);
+                            return [];
+                        }
+                    })
+            );
+
+            setStations(providerResults.flat());
+            setLinkedStations((linkedData || []).map((item) => ({
                 ...item,
-                provider: 'solarman',
-            }));
-
-            const solisRecords = solisStationsData?.data?.page?.records
-                || solisStationsData?.data?.page?.record
-                || solisStationsData?.data?.records
-                || [];
-
-            const normalizedSolis = Array.isArray(solisRecords)
-                ? solisRecords.map((item) => {
-                    const rawStatus = item.stationStatus ?? item.status ?? item.onlineStatus ?? item.connectStatus;
-                    const statusText = String(rawStatus ?? '').toLowerCase();
-                    const isOnline = rawStatus === 1
-                        || rawStatus === '1'
-                        || statusText.includes('online')
-                        || statusText.includes('normal');
-                    return {
-                        id: String(item.id || item.stationId || item.plantId || ''),
-                        name: item.stationName || item.name || item.plantName || 'Usina Solis',
-                        location: item.stationAddr || item.address || item.location || '',
-                        capacity: item.capacity || item.stationCapacity || item.capacityStr || null,
-                        status: isOnline ? 'online' : 'offline',
-                        provider: 'solis',
-                    };
-                })
-                : [];
-
-            const deyeRecords = Array.isArray(deyeStationsData?.stations) ? deyeStationsData.stations : [];
-            const normalizedDeye = deyeRecords.map((item) => ({
-                id: String(item.id || ''),
-                name: item.name || 'Usina Deye',
-                location: item.location || '',
-                capacity: item.capacity || null,
-                status: item.status === 'online' ? 'online' : 'offline',
-                provider: 'deye',
-            }));
-
-            setStations([...normalizedSolarman, ...normalizedSolis, ...normalizedDeye]);
-            setLinkedStations(linkedData || []);
+                provider: normalizeProvider(item.provider),
+            })));
             setCustomers(customersData || []);
         } catch (err) {
             console.error('Error fetching data:', err);
@@ -115,10 +211,30 @@ export function IntegratedPlants() {
     const linkedStationMap = useMemo(() => {
         const map = new Map();
         for (const link of linkedStations) {
-            map.set(String(link.station_id), link);
+            map.set(stationMapKey(link.station_id, link.provider), link);
         }
         return map;
     }, [linkedStations]);
+
+    const providerOptions = useMemo(() => {
+        const uniqueProviders = new Set();
+        providerCatalog.forEach((provider) => {
+            uniqueProviders.add(normalizeProvider(provider.id));
+        });
+        if (uniqueProviders.size === 0) {
+            Object.keys(PROVIDER_META).forEach((provider) => uniqueProviders.add(provider));
+        }
+        stations.forEach((station) => {
+            uniqueProviders.add(normalizeProvider(station.provider));
+        });
+
+        return Array.from(uniqueProviders)
+            .sort((a, b) => providerLabel(a).localeCompare(providerLabel(b)))
+            .map((provider) => ({
+                value: provider,
+                label: providerLabel(provider),
+            }));
+    }, [stations, providerCatalog]);
 
     useEffect(() => {
         const timer = window.setTimeout(() => {
@@ -139,14 +255,17 @@ export function IntegratedPlants() {
         setIsLinkModalOpen(true);
     };
 
-    const handleUnlinkClick = async (stationId, customerId) => {
+    const handleUnlinkClick = async (stationId, customerId, provider) => {
         const approved = await confirm('Tem certeza que deseja desvincular esta planta?');
         if (!approved) return;
 
         try {
-            await solarman.unlinkStation(customerId, stationId);
+            await solarman.unlinkStation(customerId, stationId, normalizeProvider(provider));
             const updatedLinked = await solarman.getLinkedStations();
-            setLinkedStations(updatedLinked);
+            setLinkedStations((updatedLinked || []).map((item) => ({
+                ...item,
+                provider: normalizeProvider(item.provider),
+            })));
             success('Planta desvinculada com sucesso.');
         } catch (err) {
             console.error('Error unlinking:', err);
@@ -163,11 +282,15 @@ export function IntegratedPlants() {
             await solarman.linkStation(selectedCustomer, {
                 station_id: selectedStation.id,
                 station_name: selectedStation.name,
+                provider: normalizeProvider(selectedStation.provider),
                 notes: linkNotes
             });
 
             const updatedLinked = await solarman.getLinkedStations();
-            setLinkedStations(updatedLinked);
+            setLinkedStations((updatedLinked || []).map((item) => ({
+                ...item,
+                provider: normalizeProvider(item.provider),
+            })));
             setIsLinkModalOpen(false);
             success('Planta vinculada com sucesso.');
         } catch (err) {
@@ -180,7 +303,7 @@ export function IntegratedPlants() {
 
     const filteredStations = useMemo(() => {
         return stations.filter(s => {
-            const linkedInfo = s.provider === 'solarman' ? linkedStationMap.get(String(s.id)) : null;
+            const linkedInfo = linkedStationMap.get(stationMapKey(s.id, s.provider));
             const isLinked = !!linkedInfo;
 
             // Search filter
@@ -199,16 +322,14 @@ export function IntegratedPlants() {
                 (filterOnline === 'offline' && s.status !== 'online');
 
             const matchesProvider = filterProvider === 'all' ||
-                (filterProvider === 'solarman' && s.provider === 'solarman') ||
-                (filterProvider === 'solis' && s.provider === 'solis') ||
-                (filterProvider === 'deye' && s.provider === 'deye');
+                (normalizeProvider(filterProvider) === normalizeProvider(s.provider));
 
             return matchesSearch && matchesStatus && matchesOnline && matchesProvider;
         });
     }, [stations, linkedStationMap, debouncedSearchTerm, filterStatus, filterOnline, filterProvider]);
 
     const stats = useMemo(() => {
-        const linked = stations.filter(s => linkedStationMap.has(String(s.id))).length;
+        const linked = stations.filter(s => linkedStationMap.has(stationMapKey(s.id, s.provider))).length;
         const online = stations.filter(s => s.status === 'online').length;
         const totalCapacity = stations.reduce((sum, s) => sum + (parseFloat(s.capacity) || 0), 0);
 
@@ -400,9 +521,9 @@ export function IntegratedPlants() {
                                         className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900"
                                     >
                                         <option value="all">Todos Provedores</option>
-                                        <option value="solarman">Solarman</option>
-                                        <option value="solis">Solis</option>
-                                        <option value="deye">Deye</option>
+                                        {providerOptions.map((provider) => (
+                                            <option key={provider.value} value={provider.value}>{provider.label}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -415,7 +536,7 @@ export function IntegratedPlants() {
                                 {filterOnline !== 'all' && <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">{filterOnline === 'online' ? 'Online' : 'Offline'}</span>}
                                 {filterProvider !== 'all' && (
                                     <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
-                                        {filterProvider === 'solarman' ? 'Solarman' : filterProvider === 'solis' ? 'Solis' : 'Deye'}
+                                        {providerLabel(filterProvider)}
                                     </span>
                                 )}
                                 {searchTerm && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">Busca: "{searchTerm}"</span>}
@@ -440,9 +561,7 @@ export function IntegratedPlants() {
                 {/* Plants Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {paginatedStations.map(station => {
-                        const linkedInfo = station.provider === 'solarman'
-                            ? linkedStationMap.get(String(station.id))
-                            : null;
+                        const linkedInfo = linkedStationMap.get(stationMapKey(station.id, station.provider));
                         const isLinked = !!linkedInfo;
 
                         return (
@@ -468,13 +587,8 @@ export function IntegratedPlants() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${station.provider === 'solis'
-                                                    ? 'bg-sky-50 text-sky-700 border-sky-200'
-                                                    : station.provider === 'deye'
-                                                        ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                                        : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                                                    }`}>
-                                                    {station.provider === 'solis' ? 'Solis' : station.provider === 'deye' ? 'Deye' : 'Solarman'}
+                                                <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border ${providerBadgeClass(station.provider)}`}>
+                                                    {providerLabel(station.provider)}
                                                 </span>
                                                 <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full ${station.status === 'online'
                                                     ? 'bg-gradient-to-r from-emerald-50 to-green-50 text-emerald-700 border border-emerald-200'
@@ -523,25 +637,19 @@ export function IntegratedPlants() {
 
                                     {/* Actions */}
                                     <div className="pt-4 border-t border-gray-100 dark:border-gray-700 space-y-2">
-                                        {station.provider !== 'solarman' ? (
-                                            <button
-                                                type="button"
-                                                disabled
-                                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-xl font-semibold text-sm border border-gray-200 dark:border-gray-700 cursor-not-allowed"
-                                            >
-                                                <span>Vinculacao de cliente indisponivel ({station.provider === 'solis' ? 'Solis' : 'Deye'})</span>
-                                            </button>
-                                        ) : isLinked ? (
+                                        {isLinked ? (
                                             <>
+                                                {normalizeProvider(station.provider) === 'solarman' && (
+                                                    <button
+                                                        onClick={() => navigate(`/monitoring/compare/${station.id}`)}
+                                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-600 hover:from-purple-100 hover:to-indigo-100 rounded-xl font-semibold text-sm transition-all border border-purple-200 hover:border-purple-300"
+                                                    >
+                                                        <GitCompare className="h-4 w-4" />
+                                                        <span>Monitorar</span>
+                                                    </button>
+                                                )}
                                                 <button
-                                                    onClick={() => navigate(`/monitoring/compare/${station.id}`)}
-                                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-50 to-indigo-50 text-purple-600 hover:from-purple-100 hover:to-indigo-100 rounded-xl font-semibold text-sm transition-all border border-purple-200 hover:border-purple-300"
-                                                >
-                                                    <GitCompare className="h-4 w-4" />
-                                                    <span>Monitorar</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleUnlinkClick(station.id, linkedInfo.customer_id)}
+                                                    onClick={() => handleUnlinkClick(station.id, linkedInfo.customer_id, station.provider)}
                                                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-50 to-rose-50 text-red-600 hover:from-red-100 hover:to-rose-100 rounded-xl font-semibold text-sm transition-all border border-red-200 hover:border-red-300"
                                                 >
                                                     <Unlink className="h-4 w-4" />

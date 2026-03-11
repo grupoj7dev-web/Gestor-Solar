@@ -40,8 +40,10 @@ export const solarman = {
         const res = await api.post(`/customers/${customerId}/stations`, data);
         return res.data;
     },
-    unlinkStation: async (customerId, stationId) => {
-        const res = await api.delete(`/customers/${customerId}/stations/${stationId}`);
+    unlinkStation: async (customerId, stationId, provider = 'solarman') => {
+        const res = await api.delete(`/customers/${customerId}/stations/${stationId}`, {
+            params: { provider }
+        });
         return res.data;
     },
     getStationRealtime: async (stationId) => {
@@ -173,6 +175,10 @@ export const integrations = {
         const res = await api.get('/integrations');
         return res.data;
     },
+    getProviders: async () => {
+        const res = await api.get('/integrations/providers');
+        return res.data;
+    },
     getSolarmanStations: async (params = {}) => {
         const res = await api.get('/stations/available', { params });
         return res.data;
@@ -188,5 +194,28 @@ export const integrations = {
     getDeyeStations: async (params = {}) => {
         const res = await api.get('/integrations/deye/stations', { params });
         return res.data;
+    },
+    getStationsByProvider: async (provider, params = {}) => {
+        const normalized = String(provider || '').trim().toLowerCase();
+        if (!normalized) {
+            return { provider: '', stations: [] };
+        }
+        const res = await api.get(`/integrations/${normalized}/stations`, { params });
+        return res.data;
+    },
+    getProviderStations: async (provider, params = {}) => {
+        const normalized = String(provider || '').trim().toLowerCase();
+        if (!normalized) return [];
+
+        if (normalized === 'solarman') {
+            return integrations.getSolarmanStations(params);
+        }
+        if (normalized === 'solis') {
+            return integrations.getSolisStations(params);
+        }
+        if (normalized === 'deye') {
+            return integrations.getDeyeStations(params);
+        }
+        return [];
     }
 };

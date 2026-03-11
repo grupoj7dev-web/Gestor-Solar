@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1764256015153",
+    "createdAt": "2025-11-27T15:06:55.153Z",
+    "name": "Queda tensão crítica",
+    "parameter": "APo_t1",
+    "operator": ">",
+    "value": "500",
+    "severity": "medium"
+  },
+  {
+    "id": "1764540263562",
+    "createdAt": "2025-11-30T22:04:23.562Z",
+    "name": "temperatura",
+    "parameter": "IGBT_T1",
+    "operator": "<",
+    "value": "5",
+    "severity": "low"
+  }
+]

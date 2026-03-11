@@ -45,7 +45,11 @@ export function Login() {
             await login(email, password);
             navigate('/', { replace: true });
         } catch (err) {
-            setError(err.response?.data?.error || 'Erro ao fazer login');
+            if (!err.response) {
+                setError('Nao foi possivel conectar ao servidor. Verifique se a API esta rodando na porta 4001.');
+            } else {
+                setError(err.response?.data?.error || 'Erro ao fazer login');
+            }
         } finally {
             setLoading(false);
         }

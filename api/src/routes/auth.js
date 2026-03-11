@@ -196,7 +196,40 @@ router.post('/login', async (req, res) => {
             console.error('User record missing password hash:', { email: user.email, id: user.id });
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        const isMatch = await bcrypt.compare(password, userPasswordHash);
+        let isMatch = false;
+        const isBcryptHash = typeof userPasswordHash === 'string' && /^\$2[aby]\$\d{2}\$/.test(userPasswordHash);
+
+        if (isBcryptHash) {
+            try {
+                isMatch = await bcrypt.compare(password, userPasswordHash);
+            } catch (compareError) {
+                console.error('Password hash compare failed:', {
+                    userId: user.id,
+                    email: user.email,
+                    message: compareError?.message
+                });
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+        } else {
+            // Legacy plain-text fallback to avoid 500 and allow smooth migration.
+            isMatch = password === userPasswordHash;
+            if (isMatch) {
+                try {
+                    const salt = await bcrypt.genSalt(10);
+                    const upgradedHash = await bcrypt.hash(password, salt);
+                    await supabase
+                        .from('users')
+                        .update({ password_hash: upgradedHash })
+                        .eq('id', user.id);
+                } catch (upgradeError) {
+                    console.error('Failed to upgrade legacy password hash:', {
+                        userId: user.id,
+                        email: user.email,
+                        message: upgradeError?.message
+                    });
+                }
+            }
+        }
 
         if (!isMatch) {
             return res.status(401).json({ error: 'Invalid credentials' });

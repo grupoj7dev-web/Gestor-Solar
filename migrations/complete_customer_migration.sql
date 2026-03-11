@@ -100,12 +100,13 @@ CREATE TABLE IF NOT EXISTS customer_stations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
     station_id TEXT NOT NULL, -- Solarman Station ID is numeric string
+    provider TEXT NOT NULL DEFAULT 'solarman',
     station_name TEXT, -- Cache for display
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     
     -- Ensure unique link per customer-station pair
-    CONSTRAINT unique_customer_station UNIQUE (customer_id, station_id)
+    CONSTRAINT unique_customer_station UNIQUE (customer_id, station_id, provider)
 );
 
 -- Enable RLS for customer_stations

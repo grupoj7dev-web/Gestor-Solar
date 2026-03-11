@@ -92,6 +92,66 @@ export function Integrations() {
                     `Removidas por duplicidade (inversor): ${status.deye?.details?.removedByDuplicateInverter ?? '-'}`,
                     status.deye?.details?.error ? `Erro: ${status.deye.details.error}` : null,
                 ].filter(Boolean)
+            },
+            {
+                id: 'aurora-vision',
+                name: 'Aurora Vision',
+                description: 'Integracao adicional com o portal Aurora Vision (FIMER).',
+                connected: Boolean(status.auroraVision?.connected),
+                configured: Boolean(status.auroraVision?.configured),
+                details: [
+                    `Total de usinas: ${status.auroraVision?.details?.stationsTotal ?? '-'}`,
+                    `Modo mock: ${status.auroraVision?.details?.mockMode ? 'sim' : 'nao'}`,
+                    status.auroraVision?.details?.error ? `Erro: ${status.auroraVision.details.error}` : null,
+                ].filter(Boolean)
+            },
+            {
+                id: 'solplanet-monitoramento',
+                name: 'SOLPLANET',
+                description: 'Integracao adicional de usinas Solplanet.',
+                connected: Boolean(status.solplanetMonitoring?.connected),
+                configured: Boolean(status.solplanetMonitoring?.configured),
+                details: [
+                    `Total de usinas: ${status.solplanetMonitoring?.details?.stationsTotal ?? '-'}`,
+                    `Modo mock: ${status.solplanetMonitoring?.details?.mockMode ? 'sim' : 'nao'}`,
+                    status.solplanetMonitoring?.details?.error ? `Erro: ${status.solplanetMonitoring.details.error}` : null,
+                ].filter(Boolean)
+            },
+            {
+                id: 'tsuness',
+                name: 'TSUNESS',
+                description: 'Integracao adicional de usinas TSUNESS.',
+                connected: Boolean(status.tsuness?.connected),
+                configured: Boolean(status.tsuness?.configured),
+                details: [
+                    `Total de usinas: ${status.tsuness?.details?.stationsTotal ?? '-'}`,
+                    `Modo mock: ${status.tsuness?.details?.mockMode ? 'sim' : 'nao'}`,
+                    status.tsuness?.details?.error ? `Erro: ${status.tsuness.details.error}` : null,
+                ].filter(Boolean)
+            },
+            {
+                id: 'isolarcloud-sungrow',
+                name: 'ISOLAR CLOUD (SUNGROW)',
+                description: 'Integracao adicional de usinas iSolarCloud da Sungrow.',
+                connected: Boolean(status.isolarcloud?.connected),
+                configured: Boolean(status.isolarcloud?.configured),
+                details: [
+                    `Total de usinas: ${status.isolarcloud?.details?.stationsTotal ?? '-'}`,
+                    `Modo mock: ${status.isolarcloud?.details?.mockMode ? 'sim' : 'nao'}`,
+                    status.isolarcloud?.details?.error ? `Erro: ${status.isolarcloud.details.error}` : null,
+                ].filter(Boolean)
+            },
+            {
+                id: 'elekeeper-saj',
+                name: 'ELEKEEPER (SAJ)',
+                description: 'Integracao adicional de usinas Elekeeper da SAJ.',
+                connected: Boolean(status.elekeeper?.connected),
+                configured: Boolean(status.elekeeper?.configured),
+                details: [
+                    `Total de usinas: ${status.elekeeper?.details?.stationsTotal ?? '-'}`,
+                    `Modo mock: ${status.elekeeper?.details?.mockMode ? 'sim' : 'nao'}`,
+                    status.elekeeper?.details?.error ? `Erro: ${status.elekeeper.details.error}` : null,
+                ].filter(Boolean)
             }
         ];
     }, [status]);

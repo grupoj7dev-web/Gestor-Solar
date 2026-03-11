@@ -5,16 +5,58 @@ const authMiddleware = require('../middleware/auth');
 const { SolarmanClient } = require('../solarmanClient');
 const { SolisClient } = require('../solisClient');
 const { DeyeClient } = require('../deyeClient');
+const { AuroraVisionClient } = require('../auroraVisionClient');
+const { SolplanetMonitoringClient } = require('../solplanetMonitoringClient');
+const { TsunessClient } = require('../tsunessClient');
+const { ISolarCloudClient } = require('../isolarcloudClient');
+const { ElekeeperClient } = require('../elekeeperClient');
 
 const router = express.Router();
 const solarman = new SolarmanClient();
 const solis = new SolisClient();
 const deye = new DeyeClient();
+const auroraVision = new AuroraVisionClient();
+const solplanetMonitoring = new SolplanetMonitoringClient();
+const tsuness = new TsunessClient();
+const isolarcloud = new ISolarCloudClient();
+const elekeeper = new ElekeeperClient();
 const SOLARMAN_SERIAL_CACHE_PATH = path.resolve(process.cwd(), 'var', 'solarman-serial-presence.json');
 const SERIAL_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function parsePageTotal(result) {
   return result?.data?.page?.total ?? result?.data?.total ?? null;
+}
+
+function normalizeProviderId(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function toNormalizedSolarmanStation(s) {
+  return {
+    id: String(s.id || s.stationId || ''),
+    name: s.name || s.stationName || `Solarman ${s.id || s.stationId}`,
+    location: s.location || s.locationAddress || s.address || '',
+    status: Number(s.generationPower || 0) > 0 ? 'online' : 'offline',
+    capacity: s.installedCapacity || s.capacity || null,
+    provider: 'solarman',
+  };
+}
+
+function toNormalizedSolisStation(item) {
+  const rawStatus = item.stationStatus ?? item.status ?? item.onlineStatus ?? item.connectStatus;
+  const statusText = String(rawStatus ?? '').toLowerCase();
+  const isOnline = rawStatus === 1
+    || rawStatus === '1'
+    || statusText.includes('online')
+    || statusText.includes('normal');
+  return {
+    id: String(item.id || item.stationId || item.plantId || ''),
+    name: item.stationName || item.name || item.plantName || 'Usina Solis',
+    location: item.stationAddr || item.address || item.location || '',
+    capacity: item.capacity || item.stationCapacity || item.capacityStr || null,
+    status: isOnline ? 'online' : 'offline',
+    provider: 'solis',
+  };
 }
 
 function readJson(filePath, fallback) {
@@ -164,11 +206,139 @@ async function listDeyeStationsDeduped({ page = 1, size = 200, all = false } = {
   };
 }
 
+async function listSolarmanStationsNormalized({ size = 200 } = {}) {
+  const data = await solarman.stationListAll({ size });
+  const stationList = data?.stationList || [];
+  return stationList.map(toNormalizedSolarmanStation);
+}
+
+async function listSolisStationsNormalized({ pageNo = 1, pageSize = 200 } = {}) {
+  const result = await solis.userStationList({ pageNo, pageSize });
+  const records = result?.data?.page?.records
+    || result?.data?.page?.record
+    || result?.data?.records
+    || [];
+  return Array.isArray(records) ? records.map(toNormalizedSolisStation) : [];
+}
+
+async function listStationsByProvider(provider, query = {}) {
+  const id = normalizeProviderId(provider);
+  if (id === 'solarman') {
+    const size = Number(query.size || 200);
+    return {
+      provider: id,
+      stations: await listSolarmanStationsNormalized({ size }),
+    };
+  }
+  if (id === 'solis') {
+    const pageNo = Number(query.pageNo || 1);
+    const pageSize = Number(query.pageSize || 200);
+    return {
+      provider: id,
+      stations: await listSolisStationsNormalized({ pageNo, pageSize }),
+    };
+  }
+  if (id === 'deye') {
+    const page = Number(query.page || 1);
+    const size = Number(query.size || 200);
+    const all = String(query.all || 'true').toLowerCase() === 'true';
+    const data = await listDeyeStationsDeduped({ page, size, all });
+    return {
+      provider: id,
+      stations: data.stations || [],
+      meta: {
+        originalTotal: data.originalTotal,
+        filteredTotal: data.filteredTotal,
+        removedByDuplicateInverter: data.removedByDuplicateInverter,
+      },
+    };
+  }
+  if (id === 'aurora-vision') {
+    const endpoint = reqSafeString(query.endpoint);
+    const stations = await auroraVision.stationList({ endpoint });
+    return {
+      provider: id,
+      stations,
+      meta: {
+        mockMode: auroraVision.mock,
+      },
+    };
+  }
+  if (id === 'solplanet-monitoramento') {
+    const endpoint = reqSafeString(query.endpoint);
+    const stations = await solplanetMonitoring.stationList({ endpoint });
+    return {
+      provider: id,
+      stations,
+      meta: {
+        mockMode: solplanetMonitoring.mock,
+      },
+    };
+  }
+  if (id === 'tsuness') {
+    const endpoint = reqSafeString(query.endpoint);
+    const stations = await tsuness.stationList({ endpoint });
+    return {
+      provider: id,
+      stations,
+      meta: {
+        mockMode: tsuness.mock,
+      },
+    };
+  }
+  if (id === 'isolarcloud-sungrow') {
+    const endpoint = reqSafeString(query.endpoint);
+    const stations = await isolarcloud.stationList({ endpoint });
+    return {
+      provider: id,
+      stations,
+      meta: {
+        mockMode: isolarcloud.mock,
+      },
+    };
+  }
+  if (id === 'elekeeper-saj') {
+    const endpoint = reqSafeString(query.endpoint);
+    const stations = await elekeeper.stationList({ endpoint });
+    return {
+      provider: id,
+      stations,
+      meta: {
+        mockMode: elekeeper.mock,
+      },
+    };
+  }
+  return null;
+}
+
+function reqSafeString(value) {
+  if (value == null) return undefined;
+  return String(value).trim();
+}
+
+function buildProviderCatalog() {
+  return [
+    { id: 'solarman', name: 'Solarman', configured: true },
+    { id: 'solis', name: 'Solis', configured: solis.isConfigured() },
+    { id: 'deye', name: 'Deye', configured: deye.isConfigured() },
+    { id: 'aurora-vision', name: 'Aurora Vision', configured: auroraVision.isConfigured() },
+    { id: 'solplanet-monitoramento', name: 'SOLPLANET - MONITORAMENTO', configured: solplanetMonitoring.isConfigured() },
+    { id: 'tsuness', name: 'TSUNESS', configured: tsuness.isConfigured() },
+    { id: 'isolarcloud-sungrow', name: 'ISOLAR CLOUD (SUNGROW)', configured: isolarcloud.isConfigured() },
+    { id: 'elekeeper-saj', name: 'ELEKEEPER (SAJ)', configured: elekeeper.isConfigured() },
+  ];
+}
+
 router.get('/', authMiddleware, async (req, res) => {
   const status = {
     solarman: { configured: true, connected: false, details: {} },
     solis: { configured: solis.isConfigured(), connected: false, details: {} },
     deye: { configured: deye.isConfigured(), connected: false, details: {} },
+    auroraVision: { configured: auroraVision.isConfigured(), connected: false, details: {} },
+    solplanetMonitoring: { configured: solplanetMonitoring.isConfigured(), connected: false, details: {} },
+    tsuness: { configured: tsuness.isConfigured(), connected: false, details: {} },
+    isolarcloud: { configured: isolarcloud.isConfigured(), connected: false, details: {} },
+    elekeeper: { configured: elekeeper.isConfigured(), connected: false, details: {} },
   };
 
   try {
@@ -208,7 +378,71 @@ router.get('/', authMiddleware, async (req, res) => {
     }
   }
 
+  if (status.auroraVision.configured) {
+    try {
+      const stations = await auroraVision.stationList({});
+      status.auroraVision.connected = true;
+      status.auroraVision.details.stationsTotal = stations.length;
+      status.auroraVision.details.mockMode = auroraVision.mock;
+    } catch (error) {
+      status.auroraVision.details.error = error.message;
+      status.auroraVision.details.mockMode = auroraVision.mock;
+    }
+  }
+
+  if (status.solplanetMonitoring.configured) {
+    try {
+      const stations = await solplanetMonitoring.stationList({});
+      status.solplanetMonitoring.connected = true;
+      status.solplanetMonitoring.details.stationsTotal = stations.length;
+      status.solplanetMonitoring.details.mockMode = solplanetMonitoring.mock;
+    } catch (error) {
+      status.solplanetMonitoring.details.error = error.message;
+      status.solplanetMonitoring.details.mockMode = solplanetMonitoring.mock;
+    }
+  }
+
+  if (status.tsuness.configured) {
+    try {
+      const stations = await tsuness.stationList({});
+      status.tsuness.connected = true;
+      status.tsuness.details.stationsTotal = stations.length;
+      status.tsuness.details.mockMode = tsuness.mock;
+    } catch (error) {
+      status.tsuness.details.error = error.message;
+      status.tsuness.details.mockMode = tsuness.mock;
+    }
+  }
+
+  if (status.isolarcloud.configured) {
+    try {
+      const stations = await isolarcloud.stationList({});
+      status.isolarcloud.connected = true;
+      status.isolarcloud.details.stationsTotal = stations.length;
+      status.isolarcloud.details.mockMode = isolarcloud.mock;
+    } catch (error) {
+      status.isolarcloud.details.error = error.message;
+      status.isolarcloud.details.mockMode = isolarcloud.mock;
+    }
+  }
+
+  if (status.elekeeper.configured) {
+    try {
+      const stations = await elekeeper.stationList({});
+      status.elekeeper.connected = true;
+      status.elekeeper.details.stationsTotal = stations.length;
+      status.elekeeper.details.mockMode = elekeeper.mock;
+    } catch (error) {
+      status.elekeeper.details.error = error.message;
+      status.elekeeper.details.mockMode = elekeeper.mock;
+    }
+  }
+
   return res.json(status);
+});
+
+router.get('/providers', authMiddleware, async (req, res) => {
+  res.json({ providers: buildProviderCatalog() });
 });
 
 router.get('/solis/stations', authMiddleware, async (req, res) => {
@@ -243,6 +477,18 @@ router.get('/deye/stations', authMiddleware, async (req, res) => {
     res.json(data);
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/:provider/stations', authMiddleware, async (req, res) => {
+  try {
+    const data = await listStationsByProvider(req.params.provider, req.query);
+    if (!data) {
+      return res.status(404).json({ success: false, error: `Provider not supported: ${req.params.provider}` });
+    }
+    return res.json(data);
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

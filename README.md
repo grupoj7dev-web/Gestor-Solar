@@ -111,3 +111,46 @@ curl -X POST http://localhost:3000/devices/history \
   -H "Content-Type: application/json" \
   -d '{"deviceSn":"INVERTER_SN","startTime":1700000000,"endTime":1700086400}'
 ```
+
+## Execu��o manual (Windows CMD)
+
+Use 2 terminais `cmd` para rodar backend e frontend juntos.
+
+1. Abra o projeto:
+
+```cmd
+cd /d D:\j7-sistemas\gestor solar
+```
+
+2. Instale depend�ncias (se necess�rio):
+
+```cmd
+npm install
+npm --prefix web install
+```
+
+3. Terminal 1 - Backend (API):
+
+```cmd
+cd /d D:\j7-sistemas\gestor solar
+npm start
+```
+
+4. Terminal 2 - Frontend (Web):
+
+```cmd
+cd /d D:\j7-sistemas\gestor solar
+npm --prefix web run dev
+```
+
+5. URLs de acesso:
+
+- Frontend: `http://localhost:4000`
+- Health API: `http://localhost:4001/api/health`
+
+6. Build do frontend (opcional):
+
+```cmd
+cd /d D:\j7-sistemas\gestor solar
+npm --prefix web run build
+```

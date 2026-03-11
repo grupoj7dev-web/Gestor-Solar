@@ -6,6 +6,11 @@ const supabase = require('../config/supabase');
 
 const client = new SolarmanClient();
 
+function normalizeProvider(provider) {
+    const value = String(provider || 'solarman').trim().toLowerCase();
+    return value || 'solarman';
+}
+
 // Get all available stations from Solarman
 router.get('/available', authMiddleware, async (req, res) => {
     try {
@@ -41,7 +46,10 @@ router.get('/linked', authMiddleware, async (req, res) => {
 
         if (error) throw error;
 
-        res.json(data);
+        res.json((data || []).map((item) => ({
+            ...item,
+            provider: normalizeProvider(item.provider),
+        })));
     } catch (error) {
         console.error('Error fetching linked stations:', error);
         res.status(500).json({ error: 'Failed to fetch linked stations' });
@@ -52,6 +60,7 @@ router.get('/linked', authMiddleware, async (req, res) => {
 router.get('/:id/customer', authMiddleware, async (req, res) => {
     try {
         const stationId = req.params.id;
+        const provider = normalizeProvider(req.query.provider);
 
         const { data, error } = await supabase
             .from('customer_stations')
@@ -59,10 +68,12 @@ router.get('/:id/customer', authMiddleware, async (req, res) => {
                 customer_id,
                 station_id,
                 station_name,
+                provider,
                 notes,
                 customer:customers(id, full_name, company_name, customer_type)
             `)
             .eq('station_id', stationId)
+            .eq('provider', provider)
             .single();
 
         if (error) {
@@ -73,7 +84,10 @@ router.get('/:id/customer', authMiddleware, async (req, res) => {
             throw error;
         }
 
-        res.json(data);
+        res.json({
+            ...data,
+            provider: normalizeProvider(data.provider),
+        });
     } catch (error) {
         console.error('Error fetching station customer:', error);
         res.status(500).json({ error: 'Failed to fetch station customer' });
@@ -220,6 +234,7 @@ router.get('/:id/reports', authMiddleware, async (req, res) => {
             .from('customer_stations')
             .select('customer_id')
             .eq('station_id', id)
+            .eq('provider', 'solarman')
             .single();
 
         if (link?.customer_id) {

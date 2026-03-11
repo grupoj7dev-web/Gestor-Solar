@@ -21,15 +21,14 @@ export default defineConfig({
     },
     server: {
         port: 4000,
+        strictPort: true,
         allowedHosts: [
-            'app.gestorsolar.com.br',
-            '.gestorsolar.com.br',
             'dea67358be9f.ngrok-free.app',
             '.ngrok-free.app', // Allow all ngrok free subdomains
         ],
         proxy: {
             '/api': {
-                target: 'http://localhost:4001',
+                target: 'http://127.0.0.1:4001',
                 changeOrigin: true,
             },
         },

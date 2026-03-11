@@ -4,6 +4,11 @@ const supabase = require('../config/supabase');
 const { validateCPF, validateCNPJ, validateEmail, validatePhone } = require('../utils/validators');
 const authMiddleware = require('../middleware/auth');
 
+function normalizeProvider(provider) {
+    const value = String(provider || 'solarman').trim().toLowerCase();
+    return value || 'solarman';
+}
+
 // Get all customers
 router.get('/', authMiddleware, async (req, res) => {
     try {
@@ -87,7 +92,10 @@ router.get('/:id', authMiddleware, async (req, res) => {
         res.json({
             ...customer,
             inverters: inverters || [],
-            stations: stations || [],
+            stations: (stations || []).map((station) => ({
+                ...station,
+                provider: normalizeProvider(station.provider),
+            })),
             consumer_units: units || []
         });
     } catch (error) {
@@ -151,6 +159,7 @@ router.delete('/:id/inverters/:inverterId', authMiddleware, async (req, res) => 
 router.post('/:id/stations', authMiddleware, async (req, res) => {
     try {
         const { station_id, station_name, notes } = req.body;
+        const provider = normalizeProvider(req.body.provider);
 
         const { data, error } = await supabase
             .from('customer_stations')
@@ -158,6 +167,7 @@ router.post('/:id/stations', authMiddleware, async (req, res) => {
                 customer_id: req.params.id,
                 station_id,
                 station_name,
+                provider,
                 notes
             }])
             .select()
@@ -170,7 +180,10 @@ router.post('/:id/stations', authMiddleware, async (req, res) => {
             throw error;
         }
 
-        res.json(data);
+        res.json({
+            ...data,
+            provider: normalizeProvider(data.provider),
+        });
     } catch (error) {
         console.error('Error linking station:', error);
         res.status(500).json({ error: 'Server error' });
@@ -180,11 +193,18 @@ router.post('/:id/stations', authMiddleware, async (req, res) => {
 // Unlink station
 router.delete('/:id/stations/:stationId', authMiddleware, async (req, res) => {
     try {
-        const { error } = await supabase
+        const provider = req.query.provider ? normalizeProvider(req.query.provider) : null;
+        let query = supabase
             .from('customer_stations')
             .delete()
             .eq('customer_id', req.params.id)
             .eq('station_id', req.params.stationId);
+
+        if (provider) {
+            query = query.eq('provider', provider);
+        }
+
+        const { error } = await query;
 
         if (error) throw error;
 
@@ -439,6 +459,7 @@ router.post('/', authMiddleware, async (req, res) => {
                 customer_id: customer.id,
                 station_id: st.station_id,
                 station_name: st.station_name,
+                provider: normalizeProvider(st.provider),
                 notes: st.notes
             }));
 
