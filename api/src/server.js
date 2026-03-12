@@ -9,6 +9,8 @@ const { callGemini } = require('./services/gemini-client');
 
 const app = express();
 const storageRoot = path.resolve(process.cwd(), 'var', 'storage');
+const MAINTENANCE_UNTIL = new Date('2026-03-13T08:00:00-03:00').getTime();
+const MAINTENANCE_REDIRECT = 'https://app.gestorsolar.com.br/maintenance.html';
 app.disable('etag');
 app.use(express.json({ limit: '50mb' }));
 app.use(morgan('dev'));
@@ -56,6 +58,14 @@ router.use('/ai-vision', aiVisionRoutes);
 router.use('/super-jota', superJotaRoutes);
 router.use('/modules', moduleRoutes);
 router.use('/integrations', integrationRoutes);
+
+// Global maintenance lock for API routes.
+app.use('/api', (req, res, next) => {
+  if (Date.now() < MAINTENANCE_UNTIL) {
+    return res.redirect(302, MAINTENANCE_REDIRECT);
+  }
+  return next();
+});
 
 const client = new SolarmanClient();
 
