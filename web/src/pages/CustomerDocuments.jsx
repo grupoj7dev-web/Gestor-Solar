@@ -1,7 +1,8 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { FileText, Download, AlertCircle, File, CreditCard, CheckCircle, XCircle, ExternalLink } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
+import { normalizeFileUrl } from '../lib/fileUrl';
 
 export function CustomerDocuments() {
     const { customer } = useOutletContext();
@@ -14,7 +15,7 @@ export function CustomerDocuments() {
             title: 'Contrato de Prestao de Servios',
             description: 'Documento legal que formaliza o acordo entre as partes',
             icon: FileText,
-            url: customer?.contract_file_url,
+            url: normalizeFileUrl(customer?.contract_file_url),
             type: 'PDF',
             color: 'blue'
         },
@@ -23,7 +24,7 @@ export function CustomerDocuments() {
             title: customer?.document_type === 'cnh' ? 'Carteira Nacional de Habilitao' : customer?.document_type === 'rg' ? 'Registro Geral' : 'Documento de Identificao',
             description: customer?.document_type === 'cnh' ? 'CNH - Documento de identificao com foto' : customer?.document_type === 'rg' ? 'RG - Documento de identificao civil' : 'Documento de identificao pessoal',
             icon: CreditCard,
-            url: customer?.document_file_url,
+            url: normalizeFileUrl(customer?.document_file_url),
             type: customer?.document_type?.toUpperCase() || 'DOC',
             color: 'purple'
         }
@@ -174,5 +175,6 @@ export function CustomerDocuments() {
         </div>
     );
 }
+
 
 

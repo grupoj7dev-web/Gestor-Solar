@@ -546,9 +546,13 @@ class StorageBucket {
   }
 
   getPublicUrl(filePath) {
+    const normalizedPath = String(filePath || '')
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/');
     return {
       data: {
-        publicUrl: `/uploads/${this.bucket}/${filePath}`
+        publicUrl: `/api/uploads/${this.bucket}/${normalizedPath}`
       }
     };
   }

@@ -4,6 +4,7 @@ import {
     User, Building, Mail, Phone, MapPin, FileText, Zap, Download, ExternalLink, File,
     Users, DollarSign, Package, CheckCircle, XCircle, Home, Briefcase
 } from 'lucide-react';
+import { normalizeFileUrl } from '../lib/fileUrl';
 
 export function CustomerInfo() {
     const { customer } = useOutletContext();
@@ -51,14 +52,15 @@ export function CustomerInfo() {
             );
         }
 
-        const fileType = getFileType(url);
+        const resolvedUrl = normalizeFileUrl(url);
+        const fileType = getFileType(resolvedUrl);
         const isImage = fileType === 'image';
 
         return (
             <div className="bg-white rounded-xl border-2 border-gray-200 overflow-hidden hover:border-blue-400 transition-all group">
                 <div className="relative bg-gray-50 aspect-video flex items-center justify-center overflow-hidden">
                     {isImage ? (
-                        <img src={url} alt={title} className="w-full h-full object-cover" />
+                        <img src={resolvedUrl} alt={title} className="w-full h-full object-cover" />
                     ) : (
                         <div className="flex flex-col items-center justify-center p-6">
                             <File className="h-16 w-16 text-red-500 mb-2" />
@@ -67,7 +69,7 @@ export function CustomerInfo() {
                     )}
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
                         <a
-                            href={url}
+                            href={resolvedUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:bg-gray-100 transition-colors"
@@ -87,7 +89,7 @@ export function CustomerInfo() {
                             </p>
                         </div>
                         <a
-                            href={url}
+                            href={resolvedUrl}
                             download
                             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Baixar arquivo"
@@ -294,7 +296,7 @@ export function CustomerInfo() {
                                         )}
                                         {u.bill_file_url && (
                                             <a
-                                                href={u.bill_file_url}
+                                                href={normalizeFileUrl(u.bill_file_url)}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mt-2"
@@ -552,3 +554,5 @@ export function CustomerInfo() {
         </div>
     );
 }
+
+

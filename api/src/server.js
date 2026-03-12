@@ -8,11 +8,13 @@ const { TOKEN_CACHE_PATH } = require('./config');
 const { callGemini } = require('./services/gemini-client');
 
 const app = express();
+const storageRoot = path.resolve(process.cwd(), 'var', 'storage');
 app.disable('etag');
 app.use(express.json({ limit: '50mb' }));
 app.use(morgan('dev'));
 app.use(cors());
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'var', 'storage')));
+app.use('/uploads', express.static(storageRoot));
+app.use('/api/uploads', express.static(storageRoot));
 
 // Create a main router for all business logic
 const router = express.Router();

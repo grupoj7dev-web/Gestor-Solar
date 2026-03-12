@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Loader2, MapPin, User, Building, Trash2, ChevronRight, ChevronLeft, FileText, Home, Users, Briefcase, DollarSign, Package, Check } from 'lucide-react';
 import axios from 'axios';
 import { api } from '../lib/api';
+import { normalizeFileUrl } from '../lib/fileUrl';
 import { useAuth } from '../contexts/AuthContext';
 import { InverterSelector } from '../components/InverterSelector';
 import { StationSelector } from '../components/StationSelector';
@@ -1220,7 +1221,7 @@ export function CustomerForm() {
                                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                     />
                                     {formData.contractor_id_file_url && (
-                                        <a href={formData.contractor_id_file_url} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline text-sm font-medium">
+                                        <a href={normalizeFileUrl(formData.contractor_id_file_url)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline text-sm font-medium">
                                             ✓ Ver Arquivo
                                         </a>
                                     )}
@@ -1244,7 +1245,7 @@ export function CustomerForm() {
                                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                                         />
                                         {formData.holder_id_file_url && (
-                                            <a href={formData.holder_id_file_url} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline text-sm font-medium">
+                                            <a href={normalizeFileUrl(formData.holder_id_file_url)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline text-sm font-medium">
                                                 ✓ Ver Arquivo
                                             </a>
                                         )}
@@ -1268,7 +1269,7 @@ export function CustomerForm() {
                                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                     />
                                     {formData.plant_contract_file_url && (
-                                        <a href={formData.plant_contract_file_url} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline text-sm font-medium">
+                                        <a href={normalizeFileUrl(formData.plant_contract_file_url)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline text-sm font-medium">
                                             ✓ Ver Arquivo
                                         </a>
                                     )}
@@ -1503,7 +1504,7 @@ export function CustomerForm() {
                                         <p className="text-sm text-blue-600 mt-2">Fazendo upload...</p>
                                     )}
                                     {formData.contract_file_url && !uploadingContract && (
-                                        <a href={formData.contract_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 mt-2 block hover:underline">
+                                        <a href={normalizeFileUrl(formData.contract_file_url)} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 mt-2 block hover:underline">
                                             ✓ Arquivo enviado - Clique para visualizar
                                         </a>
                                     )}
@@ -1541,7 +1542,7 @@ export function CustomerForm() {
                                         <p className="text-sm text-blue-600 mt-2">Fazendo upload...</p>
                                     )}
                                     {formData.document_file_url && !uploadingDocument && (
-                                        <a href={formData.document_file_url} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 mt-2 block hover:underline">
+                                        <a href={normalizeFileUrl(formData.document_file_url)} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 mt-2 block hover:underline">
                                             ✓ Arquivo enviado - Clique para visualizar
                                         </a>
                                     )}
@@ -1624,3 +1625,4 @@ export function CustomerForm() {
         </div>
     );
 }
+
