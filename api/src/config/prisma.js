@@ -10,7 +10,19 @@ function getSqliteDbPath() {
   if (!rawUrl.startsWith('file:')) return null;
   const fileRef = rawUrl.slice('file:'.length);
   if (!fileRef) return null;
-  return path.resolve(process.cwd(), fileRef);
+  if (path.isAbsolute(fileRef)) return fileRef;
+
+  // Prisma resolves relative sqlite paths from the schema directory (`./prisma` here),
+  // not necessarily from process.cwd(). Prefer an existing candidate to avoid resetting
+  // a different database file by mistake.
+  const cwdCandidate = path.resolve(process.cwd(), fileRef);
+  const prismaDirCandidate = path.resolve(process.cwd(), 'prisma', fileRef);
+
+  if (fs.existsSync(prismaDirCandidate)) return prismaDirCandidate;
+  if (fs.existsSync(cwdCandidate)) return cwdCandidate;
+
+  // If neither exists yet, default to prisma-relative to match runtime behavior.
+  return prismaDirCandidate;
 }
 
 function isSqliteCorruptionError(error) {
