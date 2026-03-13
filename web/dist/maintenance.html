@@ -1,12 +1,13 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestor Solar - Manutenção</title>
+    <title>Gestor Solar - Manutencao</title>
     <style>
         :root { color-scheme: light; }
         * { box-sizing: border-box; }
+
         body {
             margin: 0;
             min-height: 100vh;
@@ -16,6 +17,7 @@
             background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
             color: #111827;
         }
+
         .card {
             width: min(680px, 92vw);
             background: #ffffff;
@@ -25,32 +27,70 @@
             text-align: center;
             box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
         }
+
         h1 {
             margin: 0 0 12px;
             font-size: clamp(24px, 4vw, 34px);
             color: #1d4ed8;
         }
+
         p {
             margin: 0;
             font-size: clamp(16px, 2.6vw, 20px);
             line-height: 1.45;
         }
-        .time {
-            display: inline-block;
+
+        .status-list {
             margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             padding: 10px 14px;
             border-radius: 10px;
             background: #eff6ff;
             color: #1e40af;
             font-weight: 700;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+
+        .status.delay {
+            animation-delay: 0.9s;
+        }
+
+        .dots {
+            width: 20px;
+            text-align: left;
+            overflow: hidden;
+            display: inline-block;
+            animation: dots 1.2s steps(4, end) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateY(0); opacity: 0.9; }
+            50% { transform: translateY(-2px); opacity: 1; }
+        }
+
+        @keyframes dots {
+            0% { width: 0; }
+            100% { width: 20px; }
         }
     </style>
 </head>
 <body>
     <main class="card">
-        <h1>Sistema em Manutenção</h1>
+        <h1>Sistema em Manutencao</h1>
         <p>Estamos realizando ajustes e melhorias.</p>
-        <p class="time">Retorna ao normal em 13/03/2026 às 08h.</p>
+        <div class="status-list">
+            <p class="status">atualizando<span class="dots">...</span></p>
+            <p class="status delay">finalizando<span class="dots">...</span></p>
+        </div>
     </main>
 </body>
 </html>
